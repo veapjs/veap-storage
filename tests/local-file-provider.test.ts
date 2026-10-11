@@ -3,7 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { ConfigService } from "@veap/kernel";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { LocalFileProvider } from "../src/providers/local";
+import { LocalFileProvider } from "../src/providers/local.js";
 
 describe("LocalFileProvider Security", () => {
   let tempDir: string;
@@ -57,6 +57,7 @@ describe("LocalFileProvider Security", () => {
     const result = await provider.upload(file);
     expect(result).not.toHaveProperty("error");
     expect((result as any).name).toMatch(/photo-.*\.png/);
+    expect((result as any).url.startsWith("/")).toBe(true);
     expect(fs.existsSync((result as any).serviceId)).toBe(true);
   });
 

@@ -1,12 +1,20 @@
 import { ConfigService, ServiceProvider } from "@veap/kernel";
-import { LocalFileProvider } from "./providers/local";
-import { StorageService } from "./storage.service";
+import { LocalFileProvider } from "./providers/local.js";
+import { StorageService } from "./storage.service.js";
+import { STORAGE_SERVICE } from "./types.js";
 
 export class StorageServiceProvider extends ServiceProvider {
   register(): void {
     this.container.register({
       token: StorageService,
       useClass: StorageService,
+      singleton: true,
+    });
+
+    this.container.register({
+      token: STORAGE_SERVICE,
+      useFactory: (service: StorageService) => service,
+      inject: [StorageService],
       singleton: true,
     });
   }

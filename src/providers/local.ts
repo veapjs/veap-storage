@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { ConfigService, warn } from "@veap/kernel";
-import type { IStorageProvider, StorageResult } from "../types";
+import type { IStorageProvider, StorageResult } from "../types.js";
 
 const DANGEROUS_EXTENSIONS = new Set([
   ".html",
@@ -88,7 +88,7 @@ export class LocalFileProvider implements IStorageProvider {
       const storageFolder = this.getStorageFolder();
 
       if (!fs.existsSync(/*turbopackIgnore: true*/ storageFolder)) {
-        fs.mkdirSync(/*turbopackIgnore: true*/ storageFolder, {
+        await fs.promises.mkdir(/*turbopackIgnore: true*/ storageFolder, {
           recursive: true,
         });
       }
@@ -96,9 +96,13 @@ export class LocalFileProvider implements IStorageProvider {
       const name = this.generateUniqueImageName(rawName);
       const filePath = path.join(/*turbopackIgnore: true*/ storageFolder, name);
       const buffer = await file.arrayBuffer();
-      fs.writeFileSync(/*turbopackIgnore: true*/ filePath, Buffer.from(buffer));
+      await fs.promises.writeFile(
+        /*turbopackIgnore: true*/ filePath,
+        Buffer.from(buffer),
+      );
 
-      const url = `${storageFolder}/${name}`.replace("public", "");
+      const rawUrl = `${storageFolder}/${name}`.replace("public", "");
+      const url = rawUrl.startsWith("/") ? rawUrl : `/${rawUrl}`;
 
       return {
         name: name,
@@ -153,7 +157,7 @@ export class LocalFileProvider implements IStorageProvider {
       }
 
       if (fs.existsSync(/*turbopackIgnore: true*/ absolutePath)) {
-        fs.unlinkSync(/*turbopackIgnore: true*/ absolutePath);
+        await fs.promises.unlink(/*turbopackIgnore: true*/ absolutePath);
         return true;
       }
 
