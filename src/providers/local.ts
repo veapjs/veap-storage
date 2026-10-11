@@ -1,0 +1,166 @@
+import fs from "node:fs";
+import path from "node:path";
+import { ConfigService, warn } from "@veap/kernel";
+import type { IStorageProvider, StorageResult } from "../types";
+
+const DANGEROUS_EXTENSIONS = new Set([
+  ".html",
+  ".htm",
+  ".xhtml",
+  ".shtml",
+  ".svg",
+  ".xml",
+  ".php",
+  ".phtml",
+  ".php3",
+  ".php4",
+  ".php5",
+  ".phps",
+  ".asp",
+  ".aspx",
+  ".jsp",
+  ".jspx",
+  ".cgi",
+  ".pl",
+  ".py",
+  ".sh",
+  ".bash",
+  ".exe",
+  ".dll",
+  ".bat",
+  ".cmd",
+  ".ps1",
+  ".vbs",
+  ".js",
+  ".mjs",
+  ".cjs",
+  ".jsx",
+  ".ts",
+  ".tsx",
+  ".phar",
+  ".htaccess",
+  ".env",
+  ".config",
+]);
+
+export class LocalFileProvider implements IStorageProvider {
+  public id = "local";
+  public name = "Local Filesystem";
+
+  constructor(private config: ConfigService) {}
+
+  private getStorageFolder(): string {
+    return (
+      this.config.get("FILE_STORAGE_FOLDER") ||
+      (typeof process !== "undefined" && process.env?.FILE_STORAGE_FOLDER) ||
+      "public/uploads"
+    );
+  }
+
+  private generateUniqueImageName(originalName: string) {
+    const rawName = path.basename(originalName || "file").replace(/\0/g, "");
+    const ext = path.extname(rawName).toLowerCase();
+    const baseWithoutExt = path
+      .basename(rawName, ext)
+      .replace(/[^a-zA-Z0-9_-]/g, "_")
+      .toLowerCase();
+    const cleanBase = baseWithoutExt || "file";
+    const suffix = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
+
+    return `${cleanBase}-${suffix}${ext}`;
+  }
+
+  public async upload(file: File): Promise<StorageResult> {
+    try {
+      const rawName = path.basename(file.name || "file").replace(/\0/g, "");
+      const ext = path.extname(rawName).toLowerCase();
+
+      if (!ext || DANGEROUS_EXTENSIONS.has(ext)) {
+        warn(
+          "veap:storage",
+          `Blocked file upload with disallowed or dangerous extension: "${ext}"`,
+        );
+        return {
+          error: `File type "${ext}" is not allowed for security reasons`,
+        };
+      }
+
+      const storageFolder = this.getStorageFolder();
+
+      if (!fs.existsSync(/*turbopackIgnore: true*/ storageFolder)) {
+        fs.mkdirSync(/*turbopackIgnore: true*/ storageFolder, {
+          recursive: true,
+        });
+      }
+
+      const name = this.generateUniqueImageName(rawName);
+      const filePath = path.join(/*turbopackIgnore: true*/ storageFolder, name);
+      const buffer = await file.arrayBuffer();
+      fs.writeFileSync(/*turbopackIgnore: true*/ filePath, Buffer.from(buffer));
+
+      const url = `${storageFolder}/${name}`.replace("public", "");
+
+      return {
+        name: name,
+        url,
+        type: file.type,
+        size: file.size,
+        service: "local",
+        serviceId: filePath,
+      };
+    } catch (error) {
+      warn("veap:storage", `Error uploading file: ${error}`);
+      return { error: "Error uploading file" };
+    }
+  }
+
+  public async delete(keyOrUrl: string): Promise<boolean> {
+    try {
+      const storageFolder = this.getStorageFolder();
+      let filePath = keyOrUrl;
+
+      // If it is a web path (starting with /), we map it back to the local storage path.
+      if (keyOrUrl.startsWith("/")) {
+        const relativeStorageFolder = storageFolder.startsWith("public")
+          ? storageFolder.replace("public", "") // e.g. "/storage"
+          : storageFolder;
+
+        if (keyOrUrl.startsWith(relativeStorageFolder)) {
+          filePath = path.join(
+            /*turbopackIgnore: true*/ storageFolder,
+            keyOrUrl.substring(relativeStorageFolder.length),
+          );
+        } else {
+          filePath = path.join(/*turbopackIgnore: true*/ "public", keyOrUrl);
+        }
+      }
+
+      const absolutePath = path.isAbsolute(filePath)
+        ? filePath
+        : path.resolve(/*turbopackIgnore: true*/ filePath);
+      const absoluteStorageFolder = path.resolve(
+        /*turbopackIgnore: true*/ storageFolder,
+      );
+
+      // Security check: ensure filePath is strictly inside the storage folder to prevent directory traversal
+      const relative = path.relative(absoluteStorageFolder, absolutePath);
+      if (relative.startsWith("..") || path.isAbsolute(relative)) {
+        warn(
+          "veap:storage",
+          `Directory traversal attempt blocked: ${absolutePath}`,
+        );
+        return false;
+      }
+
+      if (fs.existsSync(/*turbopackIgnore: true*/ absolutePath)) {
+        fs.unlinkSync(/*turbopackIgnore: true*/ absolutePath);
+        return true;
+      }
+
+      return false;
+    } catch (error) {
+      warn("veap:storage", `Error deleting file: ${error}`);
+      return false;
+    }
+  }
+}

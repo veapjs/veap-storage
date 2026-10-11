@@ -1,0 +1,39 @@
+{
+  "name": "@veap/storage",
+  "version": "0.1.0",
+  "description": "File storage service and local driver for Veap",
+  "bugs": "https://github.com/veapjs/veap-storage/issues",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/veapjs/veap-storage.git"
+  },
+  "type": "module",
+  "license": "MIT",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "clean": "rimraf dist",
+    "build": "rimraf dist && tsc",
+    "dev": "tsc --watch",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@veap/kernel": "0.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.2",
+    "rimraf": "^6.1.3",
+    "typescript": "6.0.3",
+    "vitest": "^5.0.0"
+  }
+}
