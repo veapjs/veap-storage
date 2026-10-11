@@ -1,5 +1,6 @@
-[![CI](https://github.com/veapjs/veap-storage/actions/workflows/ci.yml/badge.svg)](https://github.com/veapjs/veap-storage/actions/workflows/ci.yml)
-[![Release](https://github.com/veapjs/veap-storage/actions/workflows/release.yml/badge.svg)](https://github.com/veapjs/veap-storage/actions/workflows/release.yml)
+[![CI](https://github.com/veapjs/veap-storage/actions/workflows/CI.yml/badge.svg)](https://github.com/veapjs/veap-storage/actions/workflows/CI.yml)
+[![Release](https://github.com/veapjs/veap-storage/actions/workflows/RELEASE.yml/badge.svg)](https://github.com/veapjs/veap-storage/actions/workflows/RELEASE.yml)
+[![Version](https://img.shields.io/npm/v/@veap/storage?style=flat&colorA=000000&colorB=000000)](https://www.npmjs.com/package/@veap/storage)
 
 # @veap/storage
 
