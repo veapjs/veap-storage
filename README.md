@@ -16,7 +16,7 @@ and extension validation, deduplication hashing, and driver routing.
 
 ## Features
 
-- **Multi-driver architecture**: Pluggable `StorageProvider` interface
+- **Multi-driver architecture**: Pluggable `IStorageProvider` interface
   allowing concurrent drivers (for example, local disk for uploads, S3 for archives).
 - **Default local provider**: Ready-to-use `LocalFileProvider` saving files to
   configurable public or private application directories.
@@ -85,30 +85,34 @@ export async function uploadAvatar(formData: FormData) {
     throw new Error(result.error);
   }
 
-  return { url: result.url, path: result.path };
+  return { url: result.url, serviceId: result.serviceId };
 }
 ```
 
 ### Implementing a Custom Storage Driver
 
 Create custom cloud storage drivers (for example, AWS S3 or Cloudflare R2) by
-implementing the `StorageProvider` interface:
+implementing the `IStorageProvider` interface:
 
 ```ts
-import type { StorageProvider, StorageFile, UploadResult } from "@veap/storage";
+import type { IStorageProvider, StorageResult } from "@veap/storage";
 
-export class S3StorageProvider implements StorageProvider {
+export class S3StorageProvider implements IStorageProvider {
   public id = "s3";
 
-  async upload(file: StorageFile): Promise<UploadResult> {
+  async upload(file: File): Promise<StorageResult> {
     // Perform upload to S3 bucket
     return {
+      name: file.name,
       url: `https://my-bucket.s3.amazonaws.com/${file.name}`,
-      path: `uploads/${file.name}`,
+      type: file.type,
+      size: file.size,
+      service: "s3",
+      serviceId: `uploads/${file.name}`,
     };
   }
 
-  async delete(filePath: string): Promise<boolean> {
+  async delete(serviceId: string): Promise<boolean> {
     // Delete file from S3 bucket
     return true;
   }
@@ -117,9 +121,11 @@ export class S3StorageProvider implements StorageProvider {
 
 ## Subpath Exports
 
-| Export Path     | Content                                                                    |
-| --------------- | -------------------------------------------------------------------------- |
-| `@veap/storage` | `StorageService`, `StorageServiceProvider`, `LocalFileProvider`, and types |
+| Export Path                     | Content                                                                    |
+| ------------------------------- | -------------------------------------------------------------------------- |
+| `@veap/storage`                 | `StorageService`, `StorageServiceProvider`, `LocalFileProvider`, and types |
+| `@veap/storage/providers/local` | `LocalFileProvider` implementation                                         |
+| `@veap/storage/types`           | `IStorageProvider`, `StorageData`, `StorageError`, and `StorageResult`     |
 
 ## Documentation
 
