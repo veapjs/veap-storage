@@ -1,6 +1,6 @@
 {
   "name": "@veap/storage",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "File storage service and local driver for Veap",
   "bugs": "https://github.com/veapjs/veap-storage/issues",
   "repository": {
@@ -36,7 +36,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@veap/kernel": "0.2.0"
+    "@veap/kernel": "0.2.1"
   },
   "devDependencies": {
     "@types/node": "^22.20.2",
